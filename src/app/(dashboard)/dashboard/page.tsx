@@ -56,11 +56,23 @@ export default function DashboardPage() {
         const { data: transactionsData } = await query
 
         // Transform transactions for chart (Supabase returns category as array from join)
-        const transformedTransactions: Transaction[] = (transactionsData || []).map((t: any) => ({
-          type: t.type,
-          amount: t.amount,
-          category: Array.isArray(t.category) ? t.category[0] || null : t.category
-        }))
+        const transformedTransactions: Transaction[] = (transactionsData || []).map((t: any) => {
+          // Handle Supabase join - category comes as array or object
+          let category = null
+          if (t.category) {
+            if (Array.isArray(t.category)) {
+              category = t.category.length > 0 ? { name: t.category[0].name } : null
+            } else {
+              category = { name: t.category.name }
+            }
+          }
+
+          return {
+            type: t.type,
+            amount: t.amount,
+            category
+          }
+        })
 
         setTransactions(transformedTransactions)
 
