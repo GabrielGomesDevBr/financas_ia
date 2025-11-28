@@ -1,0 +1,67 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Background gradient -->
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e40af;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Icon gradient -->
+    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e0e7ff;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background with rounded corners -->
+  <rect width="512" height="512" fill="url(#grad1)" rx="110"/>
+
+  <!-- Decorative circles -->
+  <circle cx="256" cy="256" r="200" fill="rgba(255, 255, 255, 0.1)"/>
+  <circle cx="256" cy="256" r="160" fill="rgba(255, 255, 255, 0.1)"/>
+
+  <!-- Wallet/Card icon -->
+  <g transform="translate(256, 256)">
+    <!-- Main wallet shape -->
+    <rect x="-120" y="-80" width="240" height="160" rx="20" fill="url(#iconGrad)" opacity="0.95"/>
+
+    <!-- Card accent line -->
+    <rect x="-120" y="-50" width="240" height="8" fill="#3b82f6" opacity="0.6"/>
+
+    <!-- Dollar symbol -->
+    <g transform="translate(0, 10)">
+      <!-- Dollar sign with modern style -->
+      <path d="M -15 -40 L -15 -50 L 15 -50 L 15 -40 Z" fill="#3b82f6"/>
+      <path d="M -15 40 L -15 50 L 15 50 L 15 40 Z" fill="#3b82f6"/>
+
+      <!-- S curve -->
+      <path d="M 20 -25 Q 20 -35, 10 -40 Q -10 -45, -20 -35 Q -25 -30, -20 -25 L 15 -20 Q 20 -15, 20 -5 Q 20 5, 15 10 L -15 15 Q -20 20, -20 30 Q -20 35, -10 40 Q 10 45, 20 35 Q 25 30, 20 25"
+            stroke="#1e40af"
+            stroke-width="14"
+            fill="none"
+            stroke-linecap="round"/>
+
+      <path d="M 20 -25 Q 20 -35, 10 -40 Q -10 -45, -20 -35 Q -25 -30, -20 -25 L 15 -20 Q 20 -15, 20 -5 Q 20 5, 15 10 L -15 15 Q -20 20, -20 30 Q -20 35, -10 40 Q 10 45, 20 35 Q 25 30, 20 25"
+            stroke="#3b82f6"
+            stroke-width="10"
+            fill="none"
+            stroke-linecap="round"/>
+    </g>
+
+    <!-- Chip indicator (like credit card chip) -->
+    <rect x="-100" y="-60" width="35" height="28" rx="4" fill="#fbbf24" opacity="0.8"/>
+    <rect x="-98" y="-58" width="31" height="24" rx="3" fill="#f59e0b" opacity="0.6"/>
+  </g>
+
+  <!-- AI sparkles -->
+  <circle cx="400" cy="112" r="8" fill="#fbbf24" opacity="0.9"/>
+  <circle cx="435" cy="150" r="6" fill="#fbbf24" opacity="0.8"/>
+  <circle cx="450" cy="200" r="5" fill="#fbbf24" opacity="0.7"/>
+
+  <circle cx="112" cy="400" r="8" fill="#fbbf24" opacity="0.9"/>
+  <circle cx="77" cy="362" r="6" fill="#fbbf24" opacity="0.8"/>
+  <circle cx="62" cy="312" r="5" fill="#fbbf24" opacity="0.7"/>
+
+  <circle cx="400" cy="400" r="6" fill="#fbbf24" opacity="0.8"/>
+  <circle cx="112" cy="112" r="6" fill="#fbbf24" opacity="0.8"/>
+</svg>

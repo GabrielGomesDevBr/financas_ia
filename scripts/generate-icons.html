@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Generator - Contas com IA</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 { color: #3b82f6; }
+    .icon-preview {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin: 20px 0;
+    }
+    .icon-item {
+      text-align: center;
+    }
+    canvas {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 5px;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    .info {
+      background: #eff6ff;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 20px 0;
+      border-left: 4px solid #3b82f6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Gerador de Ícones - Contas com IA</h1>
+
+    <div class="info">
+      <strong>Instruções:</strong>
+      <ol>
+        <li>Clique em "Gerar Todos os Ícones"</li>
+        <li>Clique com botão direito em cada ícone</li>
+        <li>Selecione "Salvar imagem como..."</li>
+        <li>Salve na pasta <code>public/icons/</code> com o nome correto</li>
+      </ol>
+    </div>
+
+    <button onclick="generateAllIcons()">Gerar Todos os Ícones</button>
+    <button onclick="clearIcons()">Limpar</button>
+
+    <div class="icon-preview" id="iconPreview"></div>
+  </div>
+
+  <script>
+    const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+
+    function drawIcon(canvas, size) {
+      const ctx = canvas.getContext('2d');
+      const scale = size / 512;
+
+      // Background gradient
+      const gradient = ctx.createLinearGradient(0, 0, size, size);
+      gradient.addColorStop(0, '#3b82f6');
+      gradient.addColorStop(1, '#1e40af');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, size, size);
+
+      // White circle background
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.beginPath();
+      ctx.arc(size / 2, size / 2, size * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Dollar sign ($) symbol
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `bold ${size * 0.5}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('$', size / 2, size / 2);
+
+      // AI spark effect (small dots)
+      ctx.fillStyle = '#fbbf24';
+      const sparkPositions = [
+        [0.75, 0.25],
+        [0.85, 0.35],
+        [0.25, 0.75],
+        [0.15, 0.65]
+      ];
+
+      sparkPositions.forEach(([x, y]) => {
+        ctx.beginPath();
+        ctx.arc(size * x, size * y, size * 0.03, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function generateIcon(size) {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+
+      drawIcon(canvas, size);
+
+      return canvas;
+    }
+
+    function generateAllIcons() {
+      const preview = document.getElementById('iconPreview');
+      preview.innerHTML = '';
+
+      sizes.forEach(size => {
+        const container = document.createElement('div');
+        container.className = 'icon-item';
+
+        const canvas = generateIcon(size);
+        container.appendChild(canvas);
+
+        const label = document.createElement('div');
+        label.textContent = `${size}x${size}px`;
+        label.style.marginTop = '10px';
+        label.style.fontWeight = 'bold';
+        container.appendChild(label);
+
+        const filename = document.createElement('div');
+        filename.textContent = `icon-${size}x${size}.png`;
+        filename.style.fontSize = '12px';
+        filename.style.color = '#666';
+        container.appendChild(filename);
+
+        preview.appendChild(container);
+      });
+    }
+
+    function clearIcons() {
+      document.getElementById('iconPreview').innerHTML = '';
+    }
+
+    // Auto-generate on load
+    window.onload = generateAllIcons;
+  </script>
+</body>
+</html>
