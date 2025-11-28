@@ -1,10 +1,11 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { Avatar } from '@/components/ui/avatar'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { LogOut, User, Users, Shield } from 'lucide-react'
+import { LogOut, Users, Shield } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { logger } from '@/lib/logger'
 
@@ -97,21 +98,13 @@ export function Header() {
 
             <div className="relative group cursor-pointer">
               <div className="absolute -inset-0.5 bg-gradient-to-br from-primary-500 to-accent-600 rounded-full opacity-75 group-hover:opacity-100 transition duration-200 blur-[1px]"></div>
-              {user.user_metadata.avatar_url ? (
-                <img
+              <div className="relative border-2 border-white rounded-full">
+                <Avatar
                   src={user.user_metadata.avatar_url}
-                  alt="Avatar"
-                  className="relative h-10 w-10 rounded-full border-2 border-white object-cover"
-                  referrerPolicy="no-referrer"
-                  crossOrigin="anonymous"
-                  onError={(e) => e.currentTarget.style.display = 'none'}
+                  alt={user.user_metadata.name || user.email || 'User'}
+                  fallback={user.user_metadata.name?.[0] || user.email?.[0] || 'U'}
+                  size={40}
                 />
-              ) : null}
-              <div
-                className="relative h-10 w-10 rounded-full bg-white flex items-center justify-center border-2 border-white"
-                style={{ display: user.user_metadata.avatar_url ? 'none' : 'flex' }}
-              >
-                <User className="h-5 w-5 text-primary-600" />
               </div>
             </div>
 

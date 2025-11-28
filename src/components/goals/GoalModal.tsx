@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -135,6 +136,11 @@ export function GoalModal({ open, onClose, onSave, goal }: GoalModalProps) {
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{goal ? 'Editar Meta' : 'Nova Meta'}</DialogTitle>
+          <DialogDescription>
+            {goal
+              ? 'Atualize as informações da meta selecionada.'
+              : 'Crie uma nova meta financeira e acompanhe seu progresso.'}
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">

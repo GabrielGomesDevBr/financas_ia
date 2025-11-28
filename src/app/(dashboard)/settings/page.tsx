@@ -65,8 +65,11 @@ export default function SettingsPage() {
   const supabase = createClient()
 
   useEffect(() => {
-    fetchSettings()
+    if (!settings) {
+      fetchSettings()
+    }
     checkSuperAdmin()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const checkSuperAdmin = async () => {

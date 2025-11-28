@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
@@ -188,6 +188,11 @@ export function BudgetModal({ open, onClose, onSave, budget, familyId }: BudgetM
           <DialogTitle>
             {budget ? 'Editar Orçamento' : 'Novo Orçamento'}
           </DialogTitle>
+          <DialogDescription>
+            {budget
+              ? 'Atualize as informações do orçamento selecionado.'
+              : 'Defina um limite de gastos para uma categoria específica.'}
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
