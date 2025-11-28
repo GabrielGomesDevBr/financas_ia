@@ -5,11 +5,10 @@ import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Input } from '@/components/ui/input'
 import { TransactionModal } from '@/components/transactions/TransactionModal'
-import { ExpenseChart } from '@/components/transactions/ExpenseChart'
 import { MobileHeader } from '@/components/mobile/MobileHeader'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
-import { Plus, Search, ArrowUpCircle, ArrowDownCircle, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Search, ArrowUpCircle, ArrowDownCircle, Pencil, Trash2, TrendingUp, Lightbulb } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import { usePeriodFilter } from '@/hooks/usePeriodFilter'
@@ -191,6 +190,50 @@ export default function TransactionsPage() {
     { income: 0, expense: 0 }
   )
 
+  // Group transactions by date
+  const groupedTransactions = filteredTransactions.reduce((groups, transaction) => {
+    const date = new Date(transaction.date).toLocaleDateString('pt-BR', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+
+    if (!groups[date]) {
+      groups[date] = []
+    }
+
+    groups[date].push(transaction)
+    return groups
+  }, {} as Record<string, Transaction[]>)
+
+  // Calculate daily totals for each group
+  const dailyTotals = Object.entries(groupedTransactions).reduce((acc, [date, txs]) => {
+    acc[date] = txs.reduce((sum, t) => {
+      return sum + Number(t.amount) * (t.type === 'income' ? 1 : -1)
+    }, 0)
+    return acc
+  }, {} as Record<string, number>)
+
+  // Calculate insights
+  const insights = {
+    topExpense: filteredTransactions
+      .filter(t => t.type === 'expense')
+      .sort((a, b) => Number(b.amount) - Number(a.amount))[0],
+    topCategory: Object.entries(
+      filteredTransactions
+        .filter(t => t.type === 'expense')
+        .reduce((acc, t) => {
+          const cat = t.category?.name || 'Sem categoria'
+          acc[cat] = (acc[cat] || 0) + Number(t.amount)
+          return acc
+        }, {} as Record<string, number>)
+    ).sort(([, a], [, b]) => b - a)[0],
+    averageExpense: filteredTransactions.filter(t => t.type === 'expense').length > 0
+      ? filteredTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount), 0) / filteredTransactions.filter(t => t.type === 'expense').length
+      : 0
+  }
+
   return (
     <>
       <MobileHeader title="Transações" />
@@ -228,7 +271,7 @@ export default function TransactionsPage() {
         </Card>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
           <div className="animate-slide-in-up" style={{ animationDelay: '0.1s' }}>
             <div className="bg-white rounded-2xl border border-green-100 shadow-lg shadow-green-500/5 hover:shadow-xl hover:shadow-green-500/10 hover:-translate-y-1 transition-all duration-300 overflow-hidden">
               <div className="h-1 gradient-success" />
@@ -292,12 +335,137 @@ export default function TransactionsPage() {
               </div>
             </div>
           </div>
+
+          {/* Transaction Count Card */}
+          <div className="animate-slide-in-up" style={{ animationDelay: '0.4s' }}>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-lg shadow-gray-500/5 hover:shadow-xl hover:shadow-gray-500/10 hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+              <div className="h-1 bg-gradient-to-r from-gray-400 to-gray-500" />
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Transações</p>
+                    <p className="text-3xl font-bold text-gray-900 mt-1">
+                      {filteredTransactions.length}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 text-gray-600">
+                    <Search className="h-8 w-8" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Average Transaction Card */}
+          <div className="animate-slide-in-up col-span-2 md:col-span-1" style={{ animationDelay: '0.5s' }}>
+            <div className="bg-white rounded-2xl border border-purple-100 shadow-lg shadow-purple-500/5 hover:shadow-xl hover:shadow-purple-500/10 hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+              <div className="h-1 bg-gradient-to-r from-purple-400 to-purple-500" />
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Média</p>
+                    <p className="text-3xl font-bold text-purple-600 mt-1">
+                      {formatCurrency(filteredTransactions.length > 0
+                        ? (totals.income + totals.expense) / filteredTransactions.length
+                        : 0)}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-purple-50 text-purple-600">
+                    <ArrowUpCircle className="h-8 w-8" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Expense Chart */}
-        <div className="animate-slide-in-up" style={{ animationDelay: '0.4s' }}>
-          <ExpenseChart transactions={transactions} />
-        </div>
+        {/* Insights Card */}
+        {filteredTransactions.length > 0 && (
+          <div className="animate-slide-in-up" style={{ animationDelay: '0.6s' }}>
+            <Card className="overflow-hidden bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 border-blue-200/60 shadow-xl">
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-blue-500/20">
+                    <Lightbulb className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">Insights Financeiros</h3>
+                    <p className="text-sm text-gray-600">Análise do seu comportamento financeiro</p>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-3">
+                  {/* Top Expense */}
+                  {insights.topExpense && (
+                    <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-200/60 shadow-sm">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-red-100 text-red-600">
+                          <TrendingUp className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Maior Despesa</p>
+                          <p className="font-bold text-gray-900 truncate" title={insights.topExpense.description}>
+                            {insights.topExpense.description}
+                          </p>
+                          <p className="text-lg font-bold text-red-600 mt-1">
+                            {formatCurrency(insights.topExpense.amount)}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {insights.topExpense.category?.name || 'Sem categoria'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Top Category */}
+                  {insights.topCategory && (
+                    <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-200/60 shadow-sm">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-purple-100 text-purple-600">
+                          <ArrowDownCircle className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Categoria com Mais Gastos</p>
+                          <p className="font-bold text-gray-900 truncate" title={insights.topCategory[0]}>
+                            {insights.topCategory[0]}
+                          </p>
+                          <p className="text-lg font-bold text-purple-600 mt-1">
+                            {formatCurrency(insights.topCategory[1])}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Total acumulado
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Average Expense */}
+                  <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-200/60 shadow-sm">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-blue-100 text-blue-600">
+                        <ArrowUpCircle className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Despesa Média</p>
+                        <p className="font-bold text-gray-900">
+                          Por transação
+                        </p>
+                        <p className="text-lg font-bold text-blue-600 mt-1">
+                          {formatCurrency(insights.averageExpense)}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {filteredTransactions.filter(t => t.type === 'expense').length} despesas
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
 
         {/* Filters */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-lg p-4 animate-slide-in-up" style={{ animationDelay: '0.5s' }}>
@@ -346,7 +514,7 @@ export default function TransactionsPage() {
         </div>
 
         {/* Transactions List - Mobile Cards */}
-        <div className="md:hidden space-y-3 animate-slide-in-up" style={{ animationDelay: '0.6s' }}>
+        <div className="md:hidden space-y-4 animate-slide-in-up" style={{ animationDelay: '0.6s' }}>
           {isLoading ? (
             <div className="flex flex-col items-center gap-3 py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary-500 border-t-transparent"></div>
@@ -361,7 +529,23 @@ export default function TransactionsPage() {
               />
             </div>
           ) : (
-            filteredTransactions.map((transaction) => (
+            Object.entries(groupedTransactions).map(([date, dayTransactions]) => (
+              <div key={date} className="space-y-3">
+                {/* Date Header with Daily Total */}
+                <div className="sticky top-0 z-10 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-3 border border-gray-200 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-gray-900 capitalize">{date}</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500">{dayTransactions.length} transações</span>
+                      <span className={`text-sm font-bold ${dailyTotals[date] >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {dailyTotals[date] >= 0 ? '+' : ''}{formatCurrency(dailyTotals[date])}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Transactions for this date */}
+                {dayTransactions.map((transaction) => (
               <div
                 key={transaction.id}
                 className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm active:scale-[0.98] transition-all"
@@ -435,6 +619,8 @@ export default function TransactionsPage() {
                   </div>
                 )}
               </div>
+                ))}
+              </div>
             ))
           )}
         </div>
@@ -475,7 +661,23 @@ export default function TransactionsPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredTransactions.map((transaction) => (
+                  Object.entries(groupedTransactions).flatMap(([date, dayTransactions]) => [
+                    // Date header row
+                    <tr key={`date-${date}`} className="bg-gradient-to-r from-gray-50 to-gray-100">
+                      <td colSpan={7} className="p-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-bold text-gray-900 capitalize">{date}</h3>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-gray-500">{dayTransactions.length} transações</span>
+                            <span className={`text-sm font-bold ${dailyTotals[date] >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {dailyTotals[date] >= 0 ? '+' : ''}{formatCurrency(dailyTotals[date])}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>,
+                    // Transaction rows for this date
+                    ...dayTransactions.map((transaction) => (
                     <tr key={transaction.id} className="hover:bg-gray-50/50 transition-colors duration-150">
                       <td className="p-4 text-sm text-gray-600">
                         {new Date(transaction.date).toLocaleDateString('pt-BR')}
@@ -543,7 +745,8 @@ export default function TransactionsPage() {
                         </div>
                       </td>
                     </tr>
-                  ))
+                    ))
+                  ])
                 )}
               </tbody>
             </table>

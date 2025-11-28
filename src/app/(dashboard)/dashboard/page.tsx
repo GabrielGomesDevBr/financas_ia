@@ -6,6 +6,13 @@ import { useEffect, useState } from 'react'
 import { Wallet, TrendingUp, TrendingDown, Target, Sparkles, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import { usePeriodFilter } from '@/hooks/usePeriodFilter'
 import { PeriodSelector } from '@/components/filters/PeriodSelector'
+import { ExpenseChart } from '@/components/transactions/ExpenseChart'
+
+interface Transaction {
+  type: 'income' | 'expense'
+  amount: number
+  category: { name: string } | null
+}
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
@@ -14,6 +21,7 @@ export default function DashboardPage() {
     balance: 0,
     goalsCount: 0,
   })
+  const [transactions, setTransactions] = useState<Transaction[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const { period, setPeriod, customRange, setCustomRange, dateRange } = usePeriodFilter()
   const supabase = createClient()
@@ -32,10 +40,10 @@ export default function DashboardPage() {
 
         if (!userData?.family_id) return
 
-        // Fetch transactions
+        // Fetch transactions with categories
         let query = supabase
           .from('transactions')
-          .select('type, amount')
+          .select('type, amount, category:categories(name)')
           .eq('family_id', userData.family_id)
 
         // Apply date range filter if exists
@@ -45,14 +53,23 @@ export default function DashboardPage() {
             .lte('date', dateRange.endDate.split('T')[0])
         }
 
-        const { data: transactions } = await query
+        const { data: transactionsData } = await query
+
+        // Transform transactions for chart (Supabase returns category as array from join)
+        const transformedTransactions: Transaction[] = (transactionsData || []).map((t: any) => ({
+          type: t.type,
+          amount: t.amount,
+          category: Array.isArray(t.category) ? t.category[0] || null : t.category
+        }))
+
+        setTransactions(transformedTransactions)
 
         // Calculate totals
-        const income = transactions
+        const income = transactionsData
           ?.filter(t => t.type === 'income')
           .reduce((sum, t) => sum + Number(t.amount), 0) || 0
 
-        const expenses = transactions
+        const expenses = transactionsData
           ?.filter(t => t.type === 'expense')
           .reduce((sum, t) => sum + Number(t.amount), 0) || 0
 
@@ -323,6 +340,11 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Expense Chart */}
+      <div className="animate-slide-in-up" style={{ animationDelay: '0.6s' }}>
+        <ExpenseChart transactions={transactions} />
       </div>
     </div>
   )

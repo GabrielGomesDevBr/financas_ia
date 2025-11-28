@@ -129,23 +129,24 @@ export function ExpenseChart({ transactions }: ExpenseChartProps) {
       </div>
 
       {/* Chart and Legends Container */}
-      <div className="p-6 pt-2">
-        <div className="flex flex-col lg:flex-row lg:items-start gap-8">
+      <div className="p-4 lg:p-6 pt-2">
+        <div className="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-8">
           {/* Pie Chart */}
-          <div className="flex-shrink-0 lg:w-[380px]">
-            <ResponsiveContainer width="100%" height={320}>
+          <div className="flex-shrink-0 lg:w-[380px] w-full">
+            <ResponsiveContainer width="100%" height={280} className="lg:!h-[320px]">
               <PieChart>
                 <Pie
                   data={chartData}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  outerRadius={130}
-                  innerRadius={75}
+                  outerRadius={90}
+                  innerRadius={55}
                   fill="#8884d8"
                   dataKey="value"
                   strokeWidth={3}
                   stroke="#fff"
+                  className="lg:!outerRadius-[130] lg:!innerRadius-[75]"
                 >
                   {chartData.map((entry, index) => (
                     <Cell
@@ -160,10 +161,10 @@ export function ExpenseChart({ transactions }: ExpenseChartProps) {
             </ResponsiveContainer>
 
             {/* Center label */}
-            <div className="relative -mt-56 pointer-events-none">
+            <div className="relative -mt-44 lg:-mt-56 pointer-events-none">
               <div className="text-center">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</p>
-                <p className="text-xl font-bold text-gray-900 mt-1">{formatCurrency(total)}</p>
+                <p className="text-[10px] lg:text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</p>
+                <p className="text-base lg:text-xl font-bold text-gray-900 mt-1">{formatCurrency(total)}</p>
               </div>
             </div>
           </div>
@@ -178,7 +179,7 @@ export function ExpenseChart({ transactions }: ExpenseChartProps) {
                 return (
                   <div
                     key={item.name}
-                    className={`group relative rounded-xl p-4 transition-all duration-200 cursor-pointer ${
+                    className={`group relative rounded-xl p-3 lg:p-4 transition-all duration-200 cursor-pointer ${
                       isTopExpense
                         ? 'bg-gradient-to-r from-red-50 to-red-50/50 border-2 border-red-200 shadow-sm'
                         : 'bg-gray-50/50 border border-gray-200/60 hover:bg-gray-100/80 hover:border-gray-300 hover:shadow-md'
@@ -207,12 +208,12 @@ export function ExpenseChart({ transactions }: ExpenseChartProps) {
                       {/* Category info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2 mb-1.5">
-                          <p className={`font-semibold truncate ${
+                          <p className={`text-sm lg:text-base font-semibold truncate ${
                             isTopExpense ? 'text-red-900' : 'text-gray-900'
                           }`} title={item.name}>
                             {item.name}
                           </p>
-                          <span className={`text-sm font-bold ${
+                          <span className={`text-xs lg:text-sm font-bold ${
                             isTopExpense ? 'text-red-600' : 'text-gray-600'
                           }`}>
                             {percentage.toFixed(1)}%
@@ -231,12 +232,12 @@ export function ExpenseChart({ transactions }: ExpenseChartProps) {
                         </div>
 
                         <div className="flex items-center justify-between mt-1.5">
-                          <span className={`text-lg font-bold ${
+                          <span className={`text-base lg:text-lg font-bold ${
                             isTopExpense ? 'text-red-700' : 'text-gray-900'
                           }`}>
                             {formatCurrency(item.value)}
                           </span>
-                          <span className="text-xs text-gray-500 font-medium">
+                          <span className="text-[10px] lg:text-xs text-gray-500 font-medium">
                             {((item.value / total) * 100).toFixed(0)}% do orçamento
                           </span>
                         </div>
