@@ -43,7 +43,7 @@ export default function InvitePage() {
             setUser(user)
 
             // Load invite details
-            const response = await fetch(`/api/family/invite/${token}`)
+            const response = await fetch(`/api/family/invite/accept/${token}`)
             const data = await response.json()
 
             if (!response.ok) {
@@ -71,7 +71,7 @@ export default function InvitePage() {
         try {
             setAccepting(true)
 
-            const response = await fetch(`/api/family/invite/${token}`, {
+            const response = await fetch(`/api/family/invite/accept/${token}`, {
                 method: 'POST',
             })
 
