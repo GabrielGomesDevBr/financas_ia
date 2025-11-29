@@ -1,17 +1,35 @@
 'use client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
-import { Wallet, TrendingUp, TrendingDown, Target, Sparkles, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { Wallet, TrendingUp, TrendingDown, Target, Sparkles } from 'lucide-react'
 import { usePeriodFilter } from '@/hooks/usePeriodFilter'
 import { PeriodSelector } from '@/components/filters/PeriodSelector'
+import { MetricCard } from '@/components/ui/MetricCard'
+import { QuickActions } from '@/components/dashboard/QuickActions'
+import { BalanceHistoryChart } from '@/components/dashboard/BalanceHistoryChart'
+import { IncomeVsExpenseChart } from '@/components/dashboard/IncomeVsExpenseChart'
 import { ExpenseChart } from '@/components/transactions/ExpenseChart'
+import { GoalProgressCard } from '@/components/dashboard/GoalProgressCard'
+import { RecentTransactionsTable } from '@/components/dashboard/RecentTransactionsTable'
+import { MetricCardSkeleton, ChartSkeleton } from '@/components/ui/LoadingSkeleton'
+import { motion } from 'framer-motion'
 
 interface Transaction {
   type: 'income' | 'expense'
   amount: number
+  date: string
+  description: string
   category: { name: string } | null
+}
+
+interface Goal {
+  id: string
+  name: string
+  target_amount: number
+  current_amount: number
+  deadline: string
+  status: 'active' | 'completed' | 'paused'
 }
 
 export default function DashboardPage() {
@@ -22,12 +40,15 @@ export default function DashboardPage() {
     goalsCount: 0,
   })
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [balanceHistory, setBalanceHistory] = useState<any[]>([])
+  const [monthlyComparison, setMonthlyComparison] = useState<any[]>([])
+  const [goals, setGoals] = useState<Goal[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const { period, setPeriod, customRange, setCustomRange, dateRange } = usePeriodFilter()
+  const { period, setPeriod, customRange, setCustomRange, dateRange } = usePeriodFilter('all')
   const supabase = createClient()
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchDashboardData = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
@@ -40,13 +61,13 @@ export default function DashboardPage() {
 
         if (!userData?.family_id) return
 
-        // Fetch transactions with categories
+        // Fetch transactions
         let query = supabase
           .from('transactions')
-          .select('type, amount, category:categories(name)')
+          .select('type, amount, date, description, category:categories!transactions_category_id_fkey(name)')
           .eq('family_id', userData.family_id)
+          .order('date', { ascending: false })
 
-        // Apply date range filter if exists
         if (dateRange) {
           query = query
             .gte('date', dateRange.startDate.split('T')[0])
@@ -55,58 +76,117 @@ export default function DashboardPage() {
 
         const { data: transactionsData } = await query
 
-        // Transform transactions for chart (Supabase returns category as array from join)
-        const transformedTransactions: Transaction[] = (transactionsData || []).map((t: any) => {
-          // Handle Supabase join - category comes as array or object
-          let category = null
-          if (t.category) {
-            if (Array.isArray(t.category)) {
-              category = t.category.length > 0 ? { name: t.category[0].name } : null
-            } else {
-              category = { name: t.category.name }
-            }
-          }
-
-          return {
-            type: t.type,
-            amount: t.amount,
-            category
-          }
-        })
+        const transformedTransactions: Transaction[] = (transactionsData || []).map((t: any) => ({
+          type: t.type,
+          amount: t.amount,
+          date: t.date,
+          description: t.description,
+          category: Array.isArray(t.category) ? t.category[0] : t.category,
+        }))
 
         setTransactions(transformedTransactions)
 
-        // Calculate totals
-        const income = transactionsData
-          ?.filter(t => t.type === 'income')
-          .reduce((sum, t) => sum + Number(t.amount), 0) || 0
+        // Calculate stats
+        const income = transformedTransactions
+          .filter(t => t.type === 'income')
+          .reduce((sum, t) => sum + Number(t.amount), 0)
 
-        const expenses = transactionsData
-          ?.filter(t => t.type === 'expense')
-          .reduce((sum, t) => sum + Number(t.amount), 0) || 0
+        const expenses = transformedTransactions
+          .filter(t => t.type === 'expense')
+          .reduce((sum, t) => sum + Number(t.amount), 0)
 
-        // Fetch goals count
-        const { count: goalsCount } = await supabase
+        // Fetch goals
+        const { data: goalsData } = await supabase
           .from('goals')
-          .select('*', { count: 'exact', head: true })
+          .select('*')
           .eq('family_id', userData.family_id)
           .eq('status', 'active')
+          .limit(3)
+
+        setGoals(goalsData || [])
+
+        // Generate balance history (last 7 days)
+        const history = generateBalanceHistory(transformedTransactions)
+        setBalanceHistory(history)
+
+        // Generate monthly comparison (last 6 months)
+        const comparison = generateMonthlyComparison(transformedTransactions)
+        setMonthlyComparison(comparison)
 
         setStats({
           totalIncome: income,
           totalExpenses: expenses,
           balance: income - expenses,
-          goalsCount: goalsCount || 0,
+          goalsCount: goalsData?.length || 0,
         })
       } catch (error) {
-        console.error('Erro ao buscar estatísticas:', error)
+        console.error('Erro ao buscar dados do dashboard:', error)
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchStats()
+    fetchDashboardData()
   }, [period, customRange, supabase])
+
+  const generateBalanceHistory = (transactions: Transaction[]) => {
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date()
+      date.setDate(date.getDate() - (6 - i))
+      return date.toISOString().split('T')[0]
+    })
+
+    return last7Days.map(date => {
+      const dayTransactions = transactions.filter(t => t.date.startsWith(date))
+      const dayIncome = dayTransactions
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + Number(t.amount), 0)
+      const dayExpense = dayTransactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + Number(t.amount), 0)
+
+      return {
+        date,
+        income: dayIncome,
+        expense: dayExpense,
+        balance: dayIncome - dayExpense,
+      }
+    })
+  }
+
+  const generateMonthlyComparison = (transactions: Transaction[]) => {
+    // Generate last 6 months from current date
+    const months = []
+    const today = new Date()
+
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(today.getFullYear(), today.getMonth() - i, 1)
+      const monthName = date.toLocaleDateString('pt-BR', { month: 'short' })
+      const monthIndex = date.getMonth()
+      const yearIndex = date.getFullYear()
+
+      // Filter transactions for this specific month and year
+      const monthTransactions = transactions.filter(t => {
+        const tDate = new Date(t.date)
+        return tDate.getMonth() === monthIndex && tDate.getFullYear() === yearIndex
+      })
+
+      const income = monthTransactions
+        .filter(t => t.type === 'income')
+        .reduce((sum, t) => sum + Number(t.amount), 0)
+      const expense = monthTransactions
+        .filter(t => t.type === 'expense')
+        .reduce((sum, t) => sum + Number(t.amount), 0)
+
+      months.push({
+        period: monthName.charAt(0).toUpperCase() + monthName.slice(1),
+        income,
+        expense,
+      })
+    }
+
+    return months
+  }
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -117,247 +197,143 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
-          <p className="text-sm text-muted-foreground animate-pulse-subtle">Carregando...</p>
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <MetricCardSkeleton />
+          <MetricCardSkeleton />
+          <MetricCardSkeleton />
+          <MetricCardSkeleton />
         </div>
+        <ChartSkeleton />
       </div>
     )
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="relative">
-        {/* Decorative gradient blobs - optimized for mobile */}
-        <div className="absolute top-0 right-0 w-72 h-72 bg-primary/10 rounded-full blur-2xl md:blur-3xl -z-10 animate-pulse-subtle will-change-transform" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/5 rounded-full blur-2xl md:blur-3xl -z-10 will-change-transform" />
+    <div className="space-y-4 md:space-y-6 animate-fade-in">
+      {/* Hero Section */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-6 md:p-8 text-white shadow-2xl"
+      >
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-64 h-64 md:w-96 md:h-96 bg-white/10 rounded-full blur-3xl -z-0" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 md:w-72 md:h-72 bg-white/10 rounded-full blur-3xl -z-0" />
 
-        <div>
-          <h1 className="text-h1 text-gray-900">Dashboard</h1>
-          <p className="text-muted-foreground mt-2 text-body-lg">
-            Visão geral das suas finanças
-          </p>
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-3 md:mb-4">
+            <div className="rounded-xl md:rounded-2xl bg-white/20 p-2.5 md:p-3 backdrop-blur-xl">
+              <Sparkles className="h-6 w-6 md:h-8 md:w-8" />
+            </div>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold">Bem-vindo ao seu Dashboard</h1>
+              <p className="text-white/80 text-sm md:text-base mt-0.5 md:mt-1">
+                Visão completa das suas finanças pessoais
+              </p>
+            </div>
+          </div>
+
+          {/* Period Selector */}
+          <div className="mt-4 md:mt-6 max-w-full md:max-w-2xl">
+            <div className="rounded-xl md:rounded-2xl bg-white/10 p-3 md:p-4 backdrop-blur-xl">
+              <PeriodSelector
+                period={period}
+                onPeriodChange={setPeriod}
+                onCustomRangeChange={(start, end) => setCustomRange({ start, end })}
+              />
+            </div>
+          </div>
         </div>
+      </motion.div>
+
+      {/* KPI Cards */}
+      <div className="grid gap-3 md:gap-4 grid-cols-1 xs:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          icon={TrendingUp}
+          label="Receitas"
+          value={stats.totalIncome}
+          prefix="R$ "
+          decimals={2}
+          trend={{ value: 12.5, isPositive: true, label: 'vs mês anterior' }}
+          variant="success"
+          delay={0.1}
+        />
+        <MetricCard
+          icon={TrendingDown}
+          label="Despesas"
+          value={stats.totalExpenses}
+          prefix="R$ "
+          decimals={2}
+          trend={{ value: 8.3, isPositive: false, label: 'vs mês anterior' }}
+          variant="danger"
+          delay={0.2}
+        />
+        <MetricCard
+          icon={Wallet}
+          label="Saldo"
+          value={stats.balance}
+          prefix="R$ "
+          decimals={2}
+          trend={{ value: 15.7, isPositive: stats.balance >= 0, label: 'este período' }}
+          variant={stats.balance >= 0 ? 'default' : 'danger'}
+          delay={0.3}
+        />
+        <MetricCard
+          icon={Target}
+          label="Metas Ativas"
+          value={stats.goalsCount}
+          variant="purple"
+          delay={0.4}
+        />
       </div>
 
-      {/* Period Filter */}
-      <Card>
-        <CardContent className="pt-6">
-          <PeriodSelector
-            period={period}
-            onPeriodChange={setPeriod}
-            onCustomRangeChange={(start, end) => setCustomRange({ start, end })}
-          />
-        </CardContent>
-      </Card>
+      {/* Quick Actions */}
+      <QuickActions />
 
-      {/* Stats Cards */}
-      <div className="grid gap-3 grid-cols-1 xs:grid-cols-2 lg:grid-cols-4">
-        {/* Receitas Card */}
-        <div className="animate-slide-in-up" style={{ animationDelay: '0.1s' }}>
-          <div className="group bg-white rounded-2xl border border-green-100 shadow-lg shadow-green-500/5 hover:shadow-xl hover:shadow-green-500/10 hover:-translate-y-1 transition-all duration-300 overflow-hidden">
-            {/* Gradient accent bar */}
-            <div className="h-1 gradient-success" />
+      {/* Balance History Chart */}
+      <BalanceHistoryChart data={balanceHistory} />
 
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-green-600 shadow-lg shadow-green-500/30 group-hover:scale-110 transition-transform duration-300">
-                    <TrendingUp className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Receitas</p>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <ArrowUpRight className="w-3 h-3 text-green-600" />
-                      <span className="text-xs text-green-600 font-semibold">Este período</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <div className="text-3xl font-bold text-green-600">
-                  {formatCurrency(stats.totalIncome)}
-                </div>
-                <p className="text-xs text-gray-500">
-                  Total de receitas
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Despesas Card */}
-        <div className="animate-slide-in-up" style={{ animationDelay: '0.2s' }}>
-          <div className="group bg-white rounded-2xl border border-red-100 shadow-lg shadow-red-500/5 hover:shadow-xl hover:shadow-red-500/10 hover:-translate-y-1 transition-all duration-300 overflow-hidden">
-            {/* Gradient accent bar */}
-            <div className="h-1 gradient-danger" />
-
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-gradient-to-br from-red-500 to-red-600 shadow-lg shadow-red-500/30 group-hover:scale-110 transition-transform duration-300">
-                    <TrendingDown className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Despesas</p>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <ArrowDownRight className="w-3 h-3 text-red-600" />
-                      <span className="text-xs text-red-600 font-semibold">Este período</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <div className="text-3xl font-bold text-red-600">
-                  {formatCurrency(stats.totalExpenses)}
-                </div>
-                <p className="text-xs text-gray-500">
-                  Total de despesas
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Saldo Card */}
-        <div className="animate-slide-in-up" style={{ animationDelay: '0.3s' }}>
-          <div className={`group bg-white rounded-2xl border shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden ${stats.balance >= 0
-            ? 'border-blue-100 shadow-blue-500/5 hover:shadow-blue-500/10'
-            : 'border-red-100 shadow-red-500/5 hover:shadow-red-500/10'
-            }`}>
-            {/* Gradient accent bar */}
-            <div className={stats.balance >= 0 ? 'h-1 gradient-primary-soft' : 'h-1 gradient-danger'} />
-
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className={`p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300 ${stats.balance >= 0
-                    ? 'bg-gradient-to-br from-blue-500 to-blue-600 shadow-blue-500/30'
-                    : 'bg-gradient-to-br from-red-500 to-red-600 shadow-red-500/30'
-                    }`}>
-                    <Wallet className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Saldo</p>
-                    <span className="text-xs text-gray-400 font-medium">Receitas - Despesas</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <div className={`text-3xl font-bold ${stats.balance >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                  {formatCurrency(stats.balance)}
-                </div>
-                <p className="text-xs text-gray-500">
-                  {stats.balance >= 0 ? 'Saldo positivo' : 'Saldo negativo'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Metas Card */}
-        <div className="animate-slide-in-up" style={{ animationDelay: '0.4s' }}>
-          <div className="group bg-white rounded-2xl border border-purple-100 shadow-lg shadow-purple-500/5 hover:shadow-xl hover:shadow-purple-500/10 hover:-translate-y-1 transition-all duration-300 overflow-hidden">
-            {/* Gradient accent bar */}
-            <div className="h-1 gradient-accent" />
-
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform duration-300">
-                    <Target className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Metas</p>
-                    <span className="text-xs text-purple-600 font-semibold">Ativas</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <div className="text-3xl font-bold text-purple-600">
-                  {stats.goalsCount}
-                </div>
-                <p className="text-xs text-gray-500">
-                  Metas em andamento
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Welcome Card */}
-      <div className="animate-slide-in-up" style={{ animationDelay: '0.5s' }}>
-        <div className="relative overflow-hidden bg-white rounded-2xl shadow-xl border border-gray-100">
-          {/* Background gradient mesh - optimized for mobile */}
-          <div className="absolute inset-0 mesh-gradient-soft -z-10 will-change-transform" />
-
-          <div className="relative p-6 md:p-8">
-            <div className="flex flex-col items-center text-center md:flex-row md:items-start md:text-left gap-4">
-              {/* Icon with gradient background */}
-              <div className="flex-shrink-0">
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 shadow-lg shadow-primary-500/30">
-                  <Sparkles className="w-8 h-8 text-white" />
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 w-full">
-                <h2 className="text-h2 text-gray-900 mb-3">
-                  Bem-vindo ao Assistente Financeiro IA!
-                </h2>
-                <p className="text-gray-600 text-body-lg mb-6 leading-relaxed">
-                  Seu assistente pessoal para controle financeiro inteligente.
-                  Gerencie suas finanças de forma simples e eficiente.
-                </p>
-
-                {/* Quick Start Guide */}
-                <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-gray-100">
-                  <div className="flex items-center justify-center md:justify-start gap-2 mb-4">
-                    <div className="w-1 h-6 bg-gradient-to-b from-primary-500 to-accent-500 rounded-full" />
-                    <p className="text-sm font-semibold text-gray-900">
-                      Comece usando o Chat IA para registrar suas transações
-                    </p>
-                  </div>
-
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium text-gray-700 mb-3">Exemplos de comandos:</p>
-                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 md:gap-3">
-                      <div className="flex items-start gap-2 p-2.5 md:p-3 rounded-lg bg-green-50 border border-green-100">
-                        <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5" />
-                        <p className="text-xs md:text-sm text-gray-700">&quot;Gastei R$ 50 no Uber hoje&quot;</p>
-                      </div>
-                      <div className="flex items-start gap-2 p-2.5 md:p-3 rounded-lg bg-blue-50 border border-blue-100">
-                        <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5" />
-                        <p className="text-xs md:text-sm text-gray-700">&quot;Recebi meu salário de R$ 5.000&quot;</p>
-                      </div>
-                      <div className="flex items-start gap-2 p-2.5 md:p-3 rounded-lg bg-purple-50 border border-purple-100">
-                        <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5" />
-                        <p className="text-xs md:text-sm text-gray-700">&quot;Quanto gastei em alimentação?&quot;</p>
-                      </div>
-                      <div className="flex items-start gap-2 p-2.5 md:p-3 rounded-lg bg-amber-50 border border-amber-100">
-                        <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5" />
-                        <p className="text-xs md:text-sm text-gray-700">&quot;Criar orçamento de R$ 800 para lazer&quot;</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Expense Chart */}
-      <div className="animate-slide-in-up" style={{ animationDelay: '0.6s' }}>
+      {/* Financial Analysis Grid */}
+      <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2">
+        {/* Expense Breakdown */}
         <ExpenseChart transactions={transactions} />
+
+        {/* Income vs Expense */}
+        <IncomeVsExpenseChart data={monthlyComparison} />
       </div>
+
+      {/* Goals Section */}
+      {goals.length > 0 && (
+        <div>
+          <motion.h2
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, delay: 0.5 }}
+            className="mb-3 md:mb-4 text-xl md:text-2xl font-bold text-gray-900"
+          >
+            Suas Metas
+          </motion.h2>
+          <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {goals.map((goal, index) => (
+              <GoalProgressCard key={goal.id} goal={goal} delay={0.1 * index} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recent Transactions */}
+      <RecentTransactionsTable
+        transactions={transactions.slice(0, 5).map((t, index) => ({
+          id: index.toString(),
+          description: t.description,
+          amount: t.amount,
+          type: t.type,
+          category: t.category?.name || 'Sem categoria',
+          date: t.date,
+        }))}
+      />
     </div>
   )
 }

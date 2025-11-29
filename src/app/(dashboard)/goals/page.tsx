@@ -8,9 +8,11 @@ import { GoalCard } from '@/components/goals/GoalCard'
 import { GoalModal } from '@/components/goals/GoalModal'
 import { DepositModal } from '@/components/goals/DepositModal'
 import { MobileHeader } from '@/components/mobile/MobileHeader'
-import { Plus, Target, TrendingUp, CheckCircle, AlertCircle } from 'lucide-react'
+import { MetricCard } from '@/components/ui/MetricCard'
+import { Plus, Target, TrendingUp, CheckCircle, AlertCircle, Sparkles } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import toast from 'react-hot-toast'
+import { motion } from 'framer-motion'
 
 interface Goal {
   id: string
@@ -131,116 +133,132 @@ export default function GoalsPage() {
   return (
     <>
       <MobileHeader title="Metas" />
-      <div className="space-y-6 animate-fade-in">
-        {/* Header */}
-        <div className="relative">
-          {/* Decorative gradient blobs */}
-          <div className="absolute top-0 right-0 w-72 h-72 bg-accent/10 rounded-full blur-2xl md:blur-3xl -z-10 animate-pulse-subtle will-change-transform" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary/5 rounded-full blur-2xl md:blur-3xl -z-10 will-change-transform" />
+      <div className="space-y-4 md:space-y-6 animate-fade-in">
+        {/* Hero Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 p-6 md:p-8 text-white shadow-2xl"
+        >
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 w-64 h-64 md:w-96 md:h-96 bg-white/10 rounded-full blur-3xl -z-0" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 md:w-72 md:h-72 bg-white/10 rounded-full blur-3xl -z-0" />
 
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl md:text-h1 text-gray-900">Metas Financeiras</h1>
-              <p className="text-muted-foreground mt-1 text-sm md:text-body-lg">Alcance seus objetivos financeiros</p>
-            </div>
-            <button
-              onClick={() => setIsGoalModalOpen(true)}
-              className="inline-flex items-center justify-center h-12 px-8 text-base font-medium rounded-xl bg-purple-600 hover:bg-purple-700 shadow-lg shadow-purple-500/30 hover:shadow-xl hover:shadow-purple-500/40 hover:-translate-y-0.5 transition-all duration-200 text-white min-h-[48px] md:self-start"
-            >
-              <Plus className="h-5 w-5 mr-2 text-white" />
-              <span className="text-white">Nova Meta</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Summary Card */}
-        <div className="animate-slide-in-up" style={{ animationDelay: '0.1s' }}>
-          <div className="relative overflow-hidden rounded-2xl shadow-2xl shadow-purple-500/20">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-blue-600" />
-            <div className="absolute inset-0 mesh-gradient-soft opacity-30" />
-
-            <div className="relative p-6 md:p-8 text-white">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4 md:mb-6">
+          <div className="relative z-10">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="rounded-2xl bg-white/20 p-3 backdrop-blur-xl">
+                  <Target className="h-8 w-8 md:h-10 md:w-10" />
+                </div>
                 <div>
-                  <p className="text-purple-100 text-xs md:text-sm font-medium mb-1">Total Economizado</p>
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-3xl md:text-4xl font-bold tracking-tight text-white">
-                      {formatCurrency(totals.totalCurrent)}
-                    </p>
-                    <p className="text-purple-200 text-xs md:text-sm">
-                      de {formatCurrency(totals.totalTarget)}
-                    </p>
-                  </div>
-                </div>
-                <div className="p-3 md:p-4 bg-white/10 rounded-2xl backdrop-blur-md border border-white/10 shadow-lg self-start">
-                  <Target className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                  <h1 className="text-2xl md:text-3xl font-bold">Metas Financeiras</h1>
+                  <p className="text-white/80 text-sm md:text-base mt-1">
+                    Alcance seus objetivos financeiros
+                  </p>
                 </div>
               </div>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setIsGoalModalOpen(true)}
+                className="flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3 font-semibold text-green-600 shadow-lg shadow-black/10 transition-all hover:shadow-xl"
+              >
+                <Plus className="h-5 w-5" />
+                <span>Nova Meta</span>
+              </motion.button>
+            </div>
+          </div>
+        </motion.div>
 
-              <div className="space-y-3">
-                <div className="flex justify-between text-xs md:text-sm font-medium text-purple-100">
-                  <span>Progresso geral</span>
-                  <span>{overallPercentage.toFixed(1)}%</span>
-                </div>
-                <div className="w-full bg-black/20 rounded-full h-3 overflow-hidden backdrop-blur-sm">
-                  <div
-                    className="h-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)] transition-all duration-1000 ease-out"
-                    style={{ width: `${Math.min(overallPercentage, 100)}%` }}
-                  />
+        {/* Summary Card with Progress */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          className="relative overflow-hidden rounded-2xl shadow-2xl shadow-purple-500/20"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-600 to-blue-600" />
+          <div className="absolute inset-0 mesh-gradient-soft opacity-30" />
+
+          <div className="relative p-6 md:p-8 text-white">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4 md:mb-6">
+              <div>
+                <p className="text-purple-100 text-xs md:text-sm font-medium mb-1">Total Economizado</p>
+                <div className="flex items-baseline gap-2">
+                  <p className="text-3xl md:text-4xl font-bold tracking-tight text-white">
+                    {formatCurrency(totals.totalCurrent)}
+                  </p>
+                  <p className="text-purple-200 text-xs md:text-sm">
+                    de {formatCurrency(totals.totalTarget)}
+                  </p>
                 </div>
               </div>
+              <div className="p-3 md:p-4 bg-white/10 rounded-2xl backdrop-blur-md border border-white/10 shadow-lg self-start">
+                <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-white" />
+              </div>
+            </div>
 
-              <div className="flex flex-col xs:flex-row xs:items-center gap-3 md:gap-6 mt-4 md:mt-6 pt-4 md:pt-6 border-t border-white/10">
-                <div className="flex items-center gap-2 text-purple-50">
-                  <div className="p-1.5 rounded-lg bg-white/10">
-                    <TrendingUp className="w-4 h-4 text-white" />
-                  </div>
-                  <span className="text-xs md:text-sm font-medium text-white">{activeGoals.length} metas ativas</span>
+            <div className="space-y-3">
+              <div className="flex justify-between text-xs md:text-sm font-medium text-purple-100">
+                <span>Progresso geral</span>
+                <span>{overallPercentage.toFixed(1)}%</span>
+              </div>
+              <div className="w-full bg-black/20 rounded-full h-3 overflow-hidden backdrop-blur-sm">
+                <div
+                  className="h-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)] transition-all duration-1000 ease-out"
+                  style={{ width: `${Math.min(overallPercentage, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col xs:flex-row xs:items-center gap-3 md:gap-6 mt-4 md:mt-6 pt-4 md:pt-6 border-t border-white/10">
+              <div className="flex items-center gap-2 text-purple-50">
+                <div className="p-1.5 rounded-lg bg-white/10">
+                  <TrendingUp className="w-4 h-4 text-white" />
                 </div>
-                <div className="flex items-center gap-2 text-purple-50">
-                  <div className="p-1.5 rounded-lg bg-white/10">
-                    <CheckCircle className="w-4 h-4 text-white" />
-                  </div>
-                  <span className="text-xs md:text-sm font-medium text-white">{completedGoals.length} concluídas</span>
+                <span className="text-xs md:text-sm font-medium text-white">{activeGoals.length} metas ativas</span>
+              </div>
+              <div className="flex items-center gap-2 text-purple-50">
+                <div className="p-1.5 rounded-lg bg-white/10">
+                  <CheckCircle className="w-4 h-4 text-white" />
                 </div>
+                <span className="text-xs md:text-sm font-medium text-white">{completedGoals.length} concluídas</span>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Stats Cards */}
+        {/* Stats Cards with MetricCard */}
         {activeGoals.length > 0 && (
-          <div className="grid gap-3 grid-cols-1 xs:grid-cols-3 animate-slide-in-up" style={{ animationDelay: '0.2s' }}>
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-lg p-4 md:p-6 hover:-translate-y-1 transition-transform duration-300">
-              <div>
-                <p className="text-xs md:text-sm font-medium text-muted-foreground">Meta Total</p>
-                <p className="text-xl md:text-2xl font-bold text-gray-900 mt-1">
-                  {formatCurrency(totals.totalTarget)}
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-green-100 shadow-lg shadow-green-500/5 p-4 md:p-6 hover:-translate-y-1 transition-transform duration-300">
-              <div>
-                <p className="text-xs md:text-sm font-medium text-muted-foreground">
-                  Já Economizado
-                </p>
-                <p className="text-xl md:text-2xl font-bold text-green-600 mt-1">
-                  {formatCurrency(totals.totalCurrent)}
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-blue-100 shadow-lg shadow-blue-500/5 p-4 md:p-6 hover:-translate-y-1 transition-transform duration-300">
-              <div>
-                <p className="text-xs md:text-sm font-medium text-muted-foreground">
-                  Ainda Falta
-                </p>
-                <p className="text-xl md:text-2xl font-bold text-blue-600 mt-1">
-                  {formatCurrency(totals.totalRemaining)}
-                </p>
-              </div>
-            </div>
+          <div className="grid gap-3 md:gap-4 grid-cols-1 xs:grid-cols-3">
+            <MetricCard
+              icon={Target}
+              label="Meta Total"
+              value={totals.totalTarget}
+              prefix="R$ "
+              decimals={2}
+              variant="default"
+              delay={0.2}
+            />
+            <MetricCard
+              icon={TrendingUp}
+              label="Já Economizado"
+              value={totals.totalCurrent}
+              prefix="R$ "
+              decimals={2}
+              variant="success"
+              delay={0.3}
+            />
+            <MetricCard
+              icon={AlertCircle}
+              label="Ainda Falta"
+              value={totals.totalRemaining}
+              prefix="R$ "
+              decimals={2}
+              variant="info"
+              delay={0.4}
+            />
           </div>
         )}
 

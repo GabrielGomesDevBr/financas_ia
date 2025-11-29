@@ -6,9 +6,11 @@ import { Button } from '@/components/ui/button'
 import { BudgetCard } from '@/components/budgets/BudgetCard'
 import { BudgetModal } from '@/components/budgets/BudgetModal'
 import { MobileHeader } from '@/components/mobile/MobileHeader'
-import { Plus, TrendingDown, AlertCircle } from 'lucide-react'
+import { MetricCard } from '@/components/ui/MetricCard'
+import { Plus, TrendingDown, AlertCircle, PiggyBank, Wallet } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import toast from 'react-hot-toast'
+import { motion } from 'framer-motion'
 
 interface BudgetStatus {
   budget_id: string
@@ -144,81 +146,83 @@ export default function BudgetsPage() {
   return (
     <>
       <MobileHeader title="Orçamentos" />
-      <div className="space-y-6 animate-fade-in">
-        {/* Header */}
-        <div className="relative">
-          {/* Decorative gradient blobs */}
-          <div className="absolute top-0 right-0 w-72 h-72 bg-blue-500/10 rounded-full blur-2xl md:blur-3xl -z-10 animate-pulse-subtle will-change-transform" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/5 rounded-full blur-2xl md:blur-3xl -z-10 will-change-transform" />
+      <div className="space-y-4 md:space-y-6 animate-fade-in">
+        {/* Hero Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500 p-6 md:p-8 text-white shadow-2xl"
+        >
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 w-64 h-64 md:w-96 md:h-96 bg-white/10 rounded-full blur-3xl -z-0" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 md:w-72 md:h-72 bg-white/10 rounded-full blur-3xl -z-0" />
 
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl md:text-h1 text-gray-900">Orçamentos</h1>
-              <p className="text-muted-foreground mt-1 text-sm md:text-body-lg">
-                Defina e acompanhe limites de gastos
-              </p>
-            </div>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="inline-flex items-center justify-center h-12 px-8 text-base font-medium rounded-xl bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-200 text-white min-h-[48px] md:self-start"
-            >
-              <Plus className="h-5 w-5 mr-2 text-white" />
-              <span className="text-white">Novo Orçamento</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Summary Cards */}
-        <div className="grid gap-3 grid-cols-1 xs:grid-cols-3 animate-slide-in-up" style={{ animationDelay: '0.1s' }}>
-          <div className="bg-white rounded-2xl border border-blue-100 shadow-lg shadow-blue-500/5 p-4 md:p-6 hover:-translate-y-1 transition-transform duration-300">
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs md:text-sm font-medium text-gray-500">Total Orçado</p>
-                <div className="p-2 md:p-3 rounded-xl bg-blue-50 text-blue-600">
-                  <TrendingDown className="h-5 w-5 md:h-6 md:w-6" />
+          <div className="relative z-10">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="rounded-2xl bg-white/20 p-3 backdrop-blur-xl">
+                  <PiggyBank className="h-8 w-8 md:h-10 md:w-10" />
+                </div>
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold">Orçamentos</h1>
+                  <p className="text-white/80 text-sm md:text-base mt-1">
+                    Defina e acompanhe limites de gastos
+                  </p>
                 </div>
               </div>
-              <p className="text-2xl md:text-3xl font-bold text-blue-600">
-                {formatCurrency(totals.totalLimit)}
-              </p>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setIsModalOpen(true)}
+                className="flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3 font-semibold text-purple-600 shadow-lg shadow-black/10 transition-all hover:shadow-xl"
+              >
+                <Plus className="h-5 w-5" />
+                <span>Novo Orçamento</span>
+              </motion.button>
             </div>
           </div>
+        </motion.div>
 
-          <div className="bg-white rounded-2xl border border-orange-100 shadow-lg shadow-orange-500/5 p-4 md:p-6 hover:-translate-y-1 transition-transform duration-300">
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs md:text-sm font-medium text-gray-500">Total Gasto</p>
-                <div className="p-2 md:p-3 rounded-xl bg-orange-50 text-orange-600">
-                  <TrendingDown className="h-5 w-5 md:h-6 md:w-6" />
-                </div>
-              </div>
-              <p className="text-2xl md:text-3xl font-bold text-orange-600">
-                {formatCurrency(totals.totalSpent)}
-              </p>
-            </div>
-          </div>
-
-          <div className={`bg-white rounded-2xl border shadow-lg p-4 md:p-6 hover:-translate-y-1 transition-transform duration-300 ${totals.totalRemaining >= 0
-            ? 'border-green-100 shadow-green-500/5'
-            : 'border-red-100 shadow-red-500/5'
-            }`}>
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs md:text-sm font-medium text-gray-500">Restante</p>
-                <div className={`p-2 md:p-3 rounded-xl ${totals.totalRemaining >= 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                  <TrendingDown className="h-5 w-5 md:h-6 md:w-6" />
-                </div>
-              </div>
-              <p className={`text-2xl md:text-3xl font-bold ${totals.totalRemaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatCurrency(totals.totalRemaining)}
-              </p>
-            </div>
-          </div>
+        {/* Summary Cards with MetricCard */}
+        <div className="grid gap-3 md:gap-4 grid-cols-1 xs:grid-cols-3">
+          <MetricCard
+            icon={PiggyBank}
+            label="Total Orçado"
+            value={totals.totalLimit}
+            prefix="R$ "
+            decimals={2}
+            variant="default"
+            delay={0.1}
+          />
+          <MetricCard
+            icon={TrendingDown}
+            label="Total Gasto"
+            value={totals.totalSpent}
+            prefix="R$ "
+            decimals={2}
+            variant="warning"
+            delay={0.2}
+          />
+          <MetricCard
+            icon={Wallet}
+            label="Restante"
+            value={totals.totalRemaining}
+            prefix="R$ "
+            decimals={2}
+            variant={totals.totalRemaining >= 0 ? 'success' : 'danger'}
+            delay={0.3}
+          />
         </div>
 
         {/* Status Overview */}
         {budgets.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-lg p-4 md:p-6 animate-slide-in-up" style={{ animationDelay: '0.2s' }}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.4 }}
+            className="bg-white rounded-2xl border border-gray-100 shadow-lg p-4 md:p-6"
+          >
             <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4 md:mb-6">Visão Geral</h3>
             <div className="grid grid-cols-1 xs:grid-cols-3 gap-3 md:gap-6">
               <div className="flex items-center gap-3 md:gap-4 p-3 md:p-4 rounded-xl bg-green-50 border border-green-100">
@@ -243,11 +247,11 @@ export default function BudgetsPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Budget List */}
-        <div className="space-y-4 animate-slide-in-up" style={{ animationDelay: '0.3s' }}>
+        <div className="space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full" />
             <h2 className="text-h3 text-gray-900">

@@ -6,14 +6,16 @@ import { EmptyState } from '@/components/ui/empty-state'
 import { Input } from '@/components/ui/input'
 import { TransactionModal } from '@/components/transactions/TransactionModal'
 import { MobileHeader } from '@/components/mobile/MobileHeader'
+import { MetricCard } from '@/components/ui/MetricCard'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
-import { Plus, Search, ArrowUpCircle, ArrowDownCircle, Pencil, Trash2, TrendingUp, Lightbulb } from 'lucide-react'
+import { Plus, Search, ArrowUpCircle, ArrowDownCircle, Pencil, Trash2, TrendingUp, Lightbulb, Wallet, Receipt } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import { usePeriodFilter } from '@/hooks/usePeriodFilter'
 import { PeriodSelector } from '@/components/filters/PeriodSelector'
 import { logger } from '@/lib/logger'
+import { motion } from 'framer-motion'
 
 interface Transaction {
   id: string
@@ -237,145 +239,103 @@ export default function TransactionsPage() {
   return (
     <>
       <MobileHeader title="Transações" />
-      <div className="space-y-6 animate-fade-in">
-        {/* Header */}
-        <div className="relative">
-          {/* Decorative gradient blobs - optimized for mobile */}
-          <div className="absolute top-0 right-0 w-72 h-72 bg-primary/10 rounded-full blur-2xl md:blur-3xl -z-10 animate-pulse-subtle will-change-transform" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/5 rounded-full blur-2xl md:blur-3xl -z-10 will-change-transform" />
+      <div className="space-y-4 md:space-y-6 animate-fade-in">
+        {/* Hero Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500 p-6 md:p-8 text-white shadow-2xl"
+        >
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 w-64 h-64 md:w-96 md:h-96 bg-white/10 rounded-full blur-3xl -z-0" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 md:w-72 md:h-72 bg-white/10 rounded-full blur-3xl -z-0" />
 
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-h1 text-gray-900">Transações</h1>
-              <p className="text-muted-foreground mt-2 text-body-lg">
-                Gerencie suas receitas e despesas
-              </p>
+          <div className="relative z-10">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="rounded-2xl bg-white/20 p-3 backdrop-blur-xl">
+                  <Receipt className="h-8 w-8 md:h-10 md:w-10" />
+                </div>
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold">Transações</h1>
+                  <p className="text-white/80 text-sm md:text-base mt-1">
+                    Gerencie suas receitas e despesas
+                  </p>
+                </div>
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setIsModalOpen(true)}
+                className="flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3 font-semibold text-blue-600 shadow-lg shadow-black/10 transition-all hover:shadow-xl"
+              >
+                <Plus className="h-5 w-5" />
+                <span>Nova Transação</span>
+              </motion.button>
             </div>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="inline-flex items-center justify-center h-12 px-8 text-base font-medium rounded-xl bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 md:self-start text-white min-h-[48px]"
-            >
-              <Plus className="h-5 w-5 mr-2 text-white" />
-              <span className="text-white">Nova Transação</span>
-            </button>
-          </div>
-        </div>
 
-        {/* Period Filter */}
-        <Card className="p-4">
-          <PeriodSelector
-            period={period}
-            onPeriodChange={setPeriod}
-            onCustomRangeChange={(start, end) => setCustomRange({ start, end })}
+            {/* Period Selector */}
+            <div className="mt-6 max-w-full md:max-w-2xl">
+              <div className="rounded-2xl bg-white/10 p-3 md:p-4 backdrop-blur-xl">
+                <PeriodSelector
+                  period={period}
+                  onPeriodChange={setPeriod}
+                  onCustomRangeChange={(start, end) => setCustomRange({ start, end })}
+                />
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Stats Cards with MetricCard */}
+        <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-5">
+          <MetricCard
+            icon={ArrowUpCircle}
+            label="Receitas"
+            value={totals.income}
+            prefix="R$ "
+            decimals={2}
+            variant="success"
+            delay={0.1}
           />
-        </Card>
-
-        {/* Stats Cards */}
-        <div className="grid gap-4 grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
-          <div className="animate-slide-in-up" style={{ animationDelay: '0.1s' }}>
-            <div className="bg-white rounded-2xl border border-green-100 shadow-lg shadow-green-500/5 hover:shadow-xl hover:shadow-green-500/10 hover:-translate-y-1 transition-all duration-300 overflow-hidden">
-              <div className="h-1 gradient-success" />
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Receitas</p>
-                    <p className="text-3xl font-bold text-green-600 mt-1">
-                      {formatCurrency(totals.income)}
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-xl bg-green-50 text-green-600">
-                    <ArrowUpCircle className="h-8 w-8" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="animate-slide-in-up" style={{ animationDelay: '0.2s' }}>
-            <div className="bg-white rounded-2xl border border-red-100 shadow-lg shadow-red-500/5 hover:shadow-xl hover:shadow-red-500/10 hover:-translate-y-1 transition-all duration-300 overflow-hidden">
-              <div className="h-1 gradient-danger" />
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Despesas</p>
-                    <p className="text-3xl font-bold text-red-600 mt-1">
-                      {formatCurrency(totals.expense)}
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-xl bg-red-50 text-red-600">
-                    <ArrowDownCircle className="h-8 w-8" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="animate-slide-in-up" style={{ animationDelay: '0.3s' }}>
-            <div className={`bg-white rounded-2xl border shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden ${totals.income - totals.expense >= 0
-              ? 'border-blue-100 shadow-blue-500/5 hover:shadow-blue-500/10'
-              : 'border-red-100 shadow-red-500/5 hover:shadow-red-500/10'
-              }`}>
-              <div className={totals.income - totals.expense >= 0 ? 'h-1 gradient-primary-soft' : 'h-1 gradient-danger'} />
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Saldo</p>
-                    <p className={`text-3xl font-bold mt-1 ${totals.income - totals.expense >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                      {formatCurrency(totals.income - totals.expense)}
-                    </p>
-                  </div>
-                  <div className={`p-3 rounded-xl ${totals.income - totals.expense >= 0 ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'}`}>
-                    {totals.income - totals.expense >= 0 ? (
-                      <ArrowUpCircle className="h-8 w-8" />
-                    ) : (
-                      <ArrowDownCircle className="h-8 w-8" />
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Transaction Count Card */}
-          <div className="animate-slide-in-up" style={{ animationDelay: '0.4s' }}>
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-lg shadow-gray-500/5 hover:shadow-xl hover:shadow-gray-500/10 hover:-translate-y-1 transition-all duration-300 overflow-hidden">
-              <div className="h-1 bg-gradient-to-r from-gray-400 to-gray-500" />
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Transações</p>
-                    <p className="text-3xl font-bold text-gray-900 mt-1">
-                      {filteredTransactions.length}
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-xl bg-gray-50 text-gray-600">
-                    <Search className="h-8 w-8" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Average Transaction Card */}
-          <div className="animate-slide-in-up col-span-2 md:col-span-1" style={{ animationDelay: '0.5s' }}>
-            <div className="bg-white rounded-2xl border border-purple-100 shadow-lg shadow-purple-500/5 hover:shadow-xl hover:shadow-purple-500/10 hover:-translate-y-1 transition-all duration-300 overflow-hidden">
-              <div className="h-1 bg-gradient-to-r from-purple-400 to-purple-500" />
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Média</p>
-                    <p className="text-3xl font-bold text-purple-600 mt-1">
-                      {formatCurrency(filteredTransactions.length > 0
-                        ? (totals.income + totals.expense) / filteredTransactions.length
-                        : 0)}
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-xl bg-purple-50 text-purple-600">
-                    <ArrowUpCircle className="h-8 w-8" />
-                  </div>
-                </div>
-              </div>
-            </div>
+          <MetricCard
+            icon={ArrowDownCircle}
+            label="Despesas"
+            value={totals.expense}
+            prefix="R$ "
+            decimals={2}
+            variant="danger"
+            delay={0.2}
+          />
+          <MetricCard
+            icon={Wallet}
+            label="Saldo"
+            value={totals.income - totals.expense}
+            prefix="R$ "
+            decimals={2}
+            variant={totals.income - totals.expense >= 0 ? 'default' : 'danger'}
+            delay={0.3}
+          />
+          <MetricCard
+            icon={Receipt}
+            label="Transações"
+            value={filteredTransactions.length}
+            variant="info"
+            delay={0.4}
+          />
+          <div className="col-span-2 lg:col-span-1">
+            <MetricCard
+              icon={TrendingUp}
+              label="Média"
+              value={filteredTransactions.length > 0
+                ? (totals.income + totals.expense) / filteredTransactions.length
+                : 0}
+              prefix="R$ "
+              decimals={2}
+              variant="purple"
+              delay={0.5}
+            />
           </div>
         </div>
 
@@ -546,79 +506,79 @@ export default function TransactionsPage() {
 
                 {/* Transactions for this date */}
                 {dayTransactions.map((transaction) => (
-              <div
-                key={transaction.id}
-                className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm active:scale-[0.98] transition-all"
-              >
-                {/* Header */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-gray-900 truncate">{transaction.description}</h4>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {new Date(transaction.date).toLocaleDateString('pt-BR')}
-                    </p>
-                  </div>
-                  <span className={`text-lg font-bold ml-3 flex-shrink-0 ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                    {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
-                  </span>
-                </div>
-
-                {/* Info Row */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
-                      {transaction.category?.name || 'Sem categoria'}
-                    </span>
-
-                    {transaction.type === 'income' ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-50 border border-green-200">
-                        <ArrowUpCircle className="w-3.5 h-3.5 text-green-600" />
-                        <span className="text-xs font-medium text-green-700">Receita</span>
+                  <div
+                    key={transaction.id}
+                    className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm active:scale-[0.98] transition-all"
+                  >
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-gray-900 truncate">{transaction.description}</h4>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {new Date(transaction.date).toLocaleDateString('pt-BR')}
+                        </p>
+                      </div>
+                      <span className={`text-lg font-bold ml-3 flex-shrink-0 ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                        {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
                       </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-50 border border-red-200">
-                        <ArrowDownCircle className="w-3.5 h-3.5 text-red-600" />
-                        <span className="text-xs font-medium text-red-700">Despesa</span>
-                      </span>
+                    </div>
+
+                    {/* Info Row */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                          {transaction.category?.name || 'Sem categoria'}
+                        </span>
+
+                        {transaction.type === 'income' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-50 border border-green-200">
+                            <ArrowUpCircle className="w-3.5 h-3.5 text-green-600" />
+                            <span className="text-xs font-medium text-green-700">Receita</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-50 border border-red-200">
+                            <ArrowDownCircle className="w-3.5 h-3.5 text-red-600" />
+                            <span className="text-xs font-medium text-red-700">Despesa</span>
+                          </span>
+                        )}
+
+                        {transaction.source === 'chat' && (
+                          <span className="inline-flex items-center gap-1 text-xs text-purple-600">
+                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                            Chat IA
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex gap-1 ml-2 flex-shrink-0">
+                        <button
+                          onClick={() => handleEdit(transaction)}
+                          className="p-2.5 hover:bg-blue-50 rounded-lg transition-colors active:scale-95 touch-target"
+                          aria-label="Editar"
+                        >
+                          <Pencil className="w-4 h-4 text-blue-600" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(transaction.id)}
+                          className="p-2.5 hover:bg-red-50 rounded-lg transition-colors active:scale-95 touch-target"
+                          aria-label="Excluir"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-600" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Subcategory if exists */}
+                    {transaction.subcategory && (
+                      <div className="mt-2 pt-2 border-t border-gray-100">
+                        <span className="text-xs text-gray-500">
+                          Subcategoria: {transaction.subcategory.name}
+                        </span>
+                      </div>
                     )}
-
-                    {transaction.source === 'chat' && (
-                      <span className="inline-flex items-center gap-1 text-xs text-purple-600">
-                        <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
-                        Chat IA
-                      </span>
-                    )}
                   </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-1 ml-2 flex-shrink-0">
-                    <button
-                      onClick={() => handleEdit(transaction)}
-                      className="p-2.5 hover:bg-blue-50 rounded-lg transition-colors active:scale-95 touch-target"
-                      aria-label="Editar"
-                    >
-                      <Pencil className="w-4 h-4 text-blue-600" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(transaction.id)}
-                      className="p-2.5 hover:bg-red-50 rounded-lg transition-colors active:scale-95 touch-target"
-                      aria-label="Excluir"
-                    >
-                      <Trash2 className="w-4 h-4 text-red-600" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Subcategory if exists */}
-                {transaction.subcategory && (
-                  <div className="mt-2 pt-2 border-t border-gray-100">
-                    <span className="text-xs text-gray-500">
-                      Subcategoria: {transaction.subcategory.name}
-                    </span>
-                  </div>
-                )}
-              </div>
                 ))}
               </div>
             ))
@@ -678,73 +638,73 @@ export default function TransactionsPage() {
                     </tr>,
                     // Transaction rows for this date
                     ...dayTransactions.map((transaction) => (
-                    <tr key={transaction.id} className="hover:bg-gray-50/50 transition-colors duration-150">
-                      <td className="p-4 text-sm text-gray-600">
-                        {new Date(transaction.date).toLocaleDateString('pt-BR')}
-                      </td>
-                      <td className="p-4">
-                        <div className="font-medium text-gray-900">{transaction.description}</div>
-                        {transaction.subcategory && (
-                          <div className="text-xs text-muted-foreground mt-0.5">
-                            {transaction.subcategory.name}
+                      <tr key={transaction.id} className="hover:bg-gray-50/50 transition-colors duration-150">
+                        <td className="p-4 text-sm text-gray-600">
+                          {new Date(transaction.date).toLocaleDateString('pt-BR')}
+                        </td>
+                        <td className="p-4">
+                          <div className="font-medium text-gray-900">{transaction.description}</div>
+                          {transaction.subcategory && (
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              {transaction.subcategory.name}
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-4 text-sm">
+                          <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                            {transaction.category?.name || 'Sem categoria'}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          {transaction.type === 'income' ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-50 border border-green-200">
+                              <ArrowUpCircle className="h-3.5 w-3.5 text-green-600" />
+                              <span className="text-xs font-medium text-green-700">Receita</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-50 border border-red-200">
+                              <ArrowDownCircle className="h-3.5 w-3.5 text-red-600" />
+                              <span className="text-xs font-medium text-red-700">Despesa</span>
+                            </span>
+                          )}
+                        </td>
+                        <td className={`p-4 text-right font-bold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                          {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
+                        </td>
+                        <td className="p-4 text-sm text-muted-foreground">
+                          {transaction.source === 'chat' ? (
+                            <span className="inline-flex items-center gap-1" title="Criado via Chat IA">
+                              <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                              Chat IA
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1" title="Criado manualmente">
+                              <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+                              Manual
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEdit(transaction)}
+                              className="hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(transaction.id)}
+                              className="hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
-                        )}
-                      </td>
-                      <td className="p-4 text-sm">
-                        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
-                          {transaction.category?.name || 'Sem categoria'}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        {transaction.type === 'income' ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-50 border border-green-200">
-                            <ArrowUpCircle className="h-3.5 w-3.5 text-green-600" />
-                            <span className="text-xs font-medium text-green-700">Receita</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-50 border border-red-200">
-                            <ArrowDownCircle className="h-3.5 w-3.5 text-red-600" />
-                            <span className="text-xs font-medium text-red-700">Despesa</span>
-                          </span>
-                        )}
-                      </td>
-                      <td className={`p-4 text-right font-bold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                        {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
-                      </td>
-                      <td className="p-4 text-sm text-muted-foreground">
-                        {transaction.source === 'chat' ? (
-                          <span className="inline-flex items-center gap-1" title="Criado via Chat IA">
-                            <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                            Chat IA
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1" title="Criado manualmente">
-                            <span className="w-2 h-2 rounded-full bg-gray-400"></span>
-                            Manual
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-4">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEdit(transaction)}
-                            className="hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(transaction.id)}
-                            className="hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
+                        </td>
+                      </tr>
                     ))
                   ])
                 )}
