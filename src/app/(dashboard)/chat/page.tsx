@@ -7,6 +7,7 @@ import { ChatHeader } from '@/components/chat/ChatHeader'
 import { ChatInput } from '@/components/chat/ChatInput'
 import { ConversationModal } from '@/components/chat/ConversationModal'
 import { LoadingIndicator } from '@/components/chat/LoadingIndicator'
+import { PersonalitySwitcher } from '@/components/chat/PersonalitySwitcher'
 import { createClient } from '@/lib/supabase/client'
 import { personalities } from '@/lib/openai/personalities'
 import { toast } from 'react-hot-toast'
@@ -185,6 +186,15 @@ export default function ChatPage() {
     setInput(lastUserMessage.content)
   }
 
+  const handlePersonalitySwitch = (newPersonality: string) => {
+    setUserPersonality(newPersonality)
+    const personality = personalities[newPersonality] || personalities.padrao
+    toast.success(`Personalidade alterada para ${personality.name}! ${personality.avatar}`, {
+      icon: personality.avatar,
+      duration: 2000
+    })
+  }
+
   return (
     <div className="flex h-screen flex-col bg-gradient-to-br from-gray-50 via-white to-purple-50/30">
       {/* Header */}
@@ -192,7 +202,13 @@ export default function ChatPage() {
         onNewConversation={handleNewConversation}
         onHistoryClick={() => setIsHistoryModalOpen(true)}
         currentTitle={currentPersonality.displayTitle}
-      />
+      >
+        {/* Personality Switcher */}
+        <PersonalitySwitcher
+          currentPersonality={userPersonality}
+          onSwitch={handlePersonalitySwitch}
+        />
+      </ChatHeader>
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto">

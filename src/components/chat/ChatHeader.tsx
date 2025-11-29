@@ -9,9 +9,10 @@ interface ChatHeaderProps {
     onToggleSidebar?: () => void
     onHistoryClick?: () => void
     currentTitle?: string
+    children?: React.ReactNode
 }
 
-export function ChatHeader({ onNewConversation, onToggleSidebar, onHistoryClick, currentTitle }: ChatHeaderProps) {
+export function ChatHeader({ onNewConversation, onToggleSidebar, onHistoryClick, currentTitle, children }: ChatHeaderProps) {
     return (
         <header className="sticky top-0 z-40 border-b-2 border-gray-200/50 bg-white/80 backdrop-blur-xl shadow-sm">
             {/* Top gradient line */}
@@ -45,6 +46,9 @@ export function ChatHeader({ onNewConversation, onToggleSidebar, onHistoryClick,
 
                 {/* Right: Actions */}
                 <div className="flex items-center gap-2">
+                    {/* Personality Switcher */}
+                    {children}
+
                     {/* History button */}
                     {onHistoryClick && (
                         <button
