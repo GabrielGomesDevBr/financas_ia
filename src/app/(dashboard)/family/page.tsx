@@ -12,9 +12,12 @@ import {
   UserMinus,
   X,
   Loader2,
+  TrendingUp,
 } from 'lucide-react'
 import { MobileHeader } from '@/components/mobile/MobileHeader'
+import { MetricCard } from '@/components/ui/MetricCard'
 import toast from 'react-hot-toast'
+import { motion } from 'framer-motion'
 
 interface FamilyMember {
   id: string
@@ -219,79 +222,81 @@ export default function FamilyPage() {
   return (
     <>
       <MobileHeader title="Família" />
-      <div className="space-y-6 max-w-4xl mx-auto animate-fade-in">
-        {/* Header */}
-        <div className="relative">
-          {/* Decorative gradient blobs */}
-          <div className="absolute top-0 right-0 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl -z-10 animate-pulse-subtle" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl -z-10" />
+      <div className="space-y-4 md:space-y-6 max-w-4xl mx-auto animate-fade-in pb-6">
+        {/* Hero Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500 p-6 md:p-8 text-white shadow-2xl"
+        >
+          <div className="absolute top-0 right-0 w-64 h-64 md:w-96 md:h-96 bg-white/10 rounded-full blur-3xl -z-0" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 md:w-72 md:h-72 bg-white/10 rounded-full blur-3xl -z-0" />
 
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-h1 text-gray-900">
-                Família
-              </h1>
-              <p className="text-muted-foreground mt-2 text-body-lg">
-                Gerencie os membros da sua família
-              </p>
-            </div>
-            {isAdmin && (
-              <button
-                onClick={() =>
-                  document.getElementById('invite-section')?.scrollIntoView({
-                    behavior: 'smooth',
-                  })
-                }
-                className="flex items-center justify-center md:justify-start gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-200 touch-target"
-              >
-                <UserPlus className="w-5 h-5" />
-                <span className="font-medium">Convidar Membro</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Family Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-slide-in-up" style={{ animationDelay: '0.1s' }}>
-          <div className="bg-white rounded-2xl p-6 shadow-lg shadow-blue-500/5 border border-blue-100 hover:-translate-y-1 transition-transform duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
-                <Users className="w-6 h-6" />
+          <div className="relative z-10">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="rounded-2xl bg-white/20 p-3 backdrop-blur-xl">
+                  <Users className="h-8 w-8 md:h-10 md:w-10" />
+                </div>
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold">{family.name}</h1>
+                  <p className="text-white/80 text-sm md:text-base mt-1">
+                    Gerencie os membros da sua família
+                  </p>
+                </div>
               </div>
+              {isAdmin && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() =>
+                    document.getElementById('invite-section')?.scrollIntoView({
+                      behavior: 'smooth',
+                    })
+                  }
+                  className="flex items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3 font-semibold text-blue-600 shadow-lg shadow-black/10 transition-all hover:shadow-xl"
+                >
+                  <UserPlus className="h-5 w-5" />
+                  <span>Convidar Membro</span>
+                </motion.button>
+              )}
             </div>
-            <p className="text-sm font-medium text-gray-500 mb-1">Total de Membros</p>
-            <p className="text-3xl font-bold text-gray-900">
-              {family.members_count}
-            </p>
           </div>
+        </motion.div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-lg shadow-green-500/5 border border-green-100 hover:-translate-y-1 transition-transform duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-green-50 rounded-xl text-green-600">
-                <Users className="w-6 h-6" />
-              </div>
-            </div>
-            <p className="text-sm font-medium text-gray-500 mb-1">Transações</p>
-            <p className="text-3xl font-bold text-gray-900">
-              {family.transactions_count}
-            </p>
-          </div>
-
-          <div className="bg-white rounded-2xl p-6 shadow-lg shadow-yellow-500/5 border border-yellow-100 hover:-translate-y-1 transition-transform duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-yellow-50 rounded-xl text-yellow-600">
-                <Mail className="w-6 h-6" />
-              </div>
-            </div>
-            <p className="text-sm font-medium text-gray-500 mb-1">Convites Pendentes</p>
-            <p className="text-3xl font-bold text-gray-900">
-              {pendingInvites.length}
-            </p>
-          </div>
+        {/* Summary Cards with MetricCard */}
+        <div className="grid gap-3 md:gap-4 grid-cols-1 xs:grid-cols-3">
+          <MetricCard
+            icon={Users}
+            label="Total de Membros"
+            value={family.members_count}
+            variant="default"
+            delay={0.1}
+          />
+          <MetricCard
+            icon={TrendingUp}
+            label="Transações"
+            value={family.transactions_count}
+            variant="success"
+            delay={0.2}
+          />
+          <MetricCard
+            icon={Mail}
+            label="Convites Pendentes"
+            value={pendingInvites.length}
+            variant="warning"
+            delay={0.3}
+          />
         </div>
 
         {/* Family Info Card */}
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200 animate-slide-in-up" style={{ animationDelay: '0.2s' }}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.4 }}
+          className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200"
+        >
           <div className="flex items-start gap-4">
             <div className="p-3 bg-white rounded-xl shadow-sm">
               <Users className="w-6 h-6 text-blue-600" />
@@ -316,7 +321,7 @@ export default function FamilyPage() {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Members List */}
         <div className="space-y-4 animate-slide-in-up" style={{ animationDelay: '0.3s' }}>

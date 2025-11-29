@@ -2,7 +2,7 @@
 
 import { MobileHeader } from '@/components/mobile/MobileHeader'
 import Link from 'next/link'
-import { Target, Users, Settings, LogOut, Shield } from 'lucide-react'
+import { Target, Users, Settings, LogOut, Shield, BarChart3 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -34,6 +34,13 @@ export default function MorePage() {
     }
 
     const menuItems = [
+        {
+            href: '/reports',
+            icon: BarChart3,
+            label: 'Relatórios',
+            description: 'Análise financeira detalhada',
+            color: 'from-indigo-500 to-purple-500'
+        },
         {
             href: '/goals',
             icon: Target,

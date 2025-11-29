@@ -20,11 +20,13 @@ import {
   Code,
   ArrowRight,
   AlertTriangle,
+  Settings,
 } from 'lucide-react'
 import { MobileHeader } from '@/components/mobile/MobileHeader'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { motion } from 'framer-motion'
 
 interface UserSettings {
   notifications_enabled: boolean
@@ -244,22 +246,31 @@ export default function SettingsPage() {
   return (
     <>
       <MobileHeader title="Configurações" />
-      <div className="space-y-6 max-w-4xl mx-auto animate-fade-in">
-        {/* Header */}
-        <div className="relative">
-          {/* Decorative gradient blobs */}
-          <div className="absolute top-0 right-0 w-72 h-72 bg-gray-500/5 rounded-full blur-3xl -z-10 animate-pulse-subtle" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl -z-10" />
+      <div className="space-y-4 md:space-y-6 max-w-4xl mx-auto animate-fade-in pb-6">
+        {/* Hero Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900 p-6 md:p-8 text-white shadow-2xl"
+        >
+          <div className="absolute top-0 right-0 w-64 h-64 md:w-96 md:h-96 bg-white/10 rounded-full blur-3xl -z-0" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 md:w-72 md:h-72 bg-white/10 rounded-full blur-3xl -z-0" />
 
-          <div>
-            <h1 className="text-h1 text-gray-900">
-              Configurações
-            </h1>
-            <p className="text-muted-foreground mt-2 text-body-lg">
-              Personalize sua experiência
-            </p>
+          <div className="relative z-10">
+            <div className="flex items-center gap-4">
+              <div className="rounded-2xl bg-white/20 p-3 backdrop-blur-xl">
+                <Settings className="h-8 w-8 md:h-10 md:w-10" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold">Configurações</h1>
+                <p className="text-white/80 text-sm md:text-base mt-1">
+                  Personalize sua experiência
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Dev Mode Section - Only for Super Admin */}
         {isSuperAdmin && (

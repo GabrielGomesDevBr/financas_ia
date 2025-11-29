@@ -31,7 +31,7 @@ const actions: QuickAction[] = [
     {
         icon: FileText,
         label: 'Relatórios',
-        href: '/dashboard',
+        href: '/reports',
         gradient: 'from-green-500 to-green-600',
         shadow: 'shadow-green-500/30',
     },
