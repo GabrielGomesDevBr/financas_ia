@@ -102,26 +102,26 @@ export function MetricCard({
             {/* Gradient accent bar */}
             <div className={cn('h-1', colors.accent)} />
 
-            <div className="p-6">
+            <div className="p-4 sm:p-5 md:p-6">
                 {/* Icon and Label */}
-                <div className="mb-4 flex items-center gap-3">
+                <div className="mb-3 sm:mb-4 flex items-center gap-2 sm:gap-3">
                     <div
                         className={cn(
-                            'rounded-xl bg-gradient-to-br p-3 shadow-lg transition-transform duration-300 group-hover:scale-110',
+                            'rounded-xl bg-gradient-to-br p-2 sm:p-2.5 md:p-3 shadow-lg transition-transform duration-300 group-hover:scale-110',
                             colors.bg,
                             colors.shadow
                         )}
                     >
-                        <Icon className="h-5 w-5 text-white" />
+                        <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                     </div>
-                    <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-500">{label}</p>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-xs sm:text-sm font-medium text-gray-500 truncate">{label}</p>
                     </div>
                 </div>
 
                 {/* Animated Value */}
                 <div className="space-y-2">
-                    <div className={cn('text-3xl font-bold', colors.text)}>
+                    <div className={cn('text-xl sm:text-2xl md:text-3xl font-bold break-words', colors.text)}>
                         <CountUp
                             start={0}
                             end={value}
