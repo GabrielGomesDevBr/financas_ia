@@ -5,17 +5,24 @@ import { Copy, ThumbsUp, ThumbsDown, RefreshCw, Check, User, Bot } from 'lucide-
 import { toast } from 'react-hot-toast'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { personalities } from '@/lib/openai/personalities'
+import { motion } from 'framer-motion'
+import { QuickReplies } from './QuickReplies'
 
 interface ChatMessageProps {
   role: 'user' | 'assistant'
   content: string
   onRegenerate?: () => void
   userAvatar?: string
+  personalityKey?: string
+  onQuickReply?: (text: string) => void
+  showQuickReplies?: boolean
 }
 
-export function ChatMessage({ role, content, onRegenerate, userAvatar }: ChatMessageProps) {
+export function ChatMessage({ role, content, onRegenerate, userAvatar, personalityKey = 'padrao', onQuickReply, showQuickReplies = false }: ChatMessageProps) {
   const [copied, setCopied] = useState(false)
   const [liked, setLiked] = useState<boolean | null>(null)
+  const personality = personalities[personalityKey] || personalities.padrao
 
   const handleCopy = async () => {
     try {
@@ -37,7 +44,10 @@ export function ChatMessage({ role, content, onRegenerate, userAvatar }: ChatMes
   }
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, x: role === 'user' ? 20 : -20, y: 10 }}
+      animate={{ opacity: 1, x: 0, y: 0 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
       className={`group w-full border-b border-neutral-200 dark:border-neutral-800 ${role === 'assistant' ? 'bg-neutral-50 dark:bg-neutral-900/50' : 'bg-white dark:bg-neutral-950'
         }`}
     >
@@ -66,6 +76,14 @@ export function ChatMessage({ role, content, onRegenerate, userAvatar }: ChatMes
 
           {/* Content */}
           <div className="flex-1 space-y-2 overflow-hidden">
+            {/* Personality Badge for AI messages */}
+            {role === 'assistant' && (
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="text-xs">{personality.avatar}</span>
+                <span className="text-xs font-semibold text-gray-600">{personality.name}</span>
+              </div>
+            )}
+
             <div className="prose dark:prose-invert max-w-none prose-p:my-2 prose-headings:my-3">
               {role === 'assistant' ? (
                 <ReactMarkdown
@@ -156,9 +174,14 @@ export function ChatMessage({ role, content, onRegenerate, userAvatar }: ChatMes
                 )}
               </div>
             )}
+
+            {/* Quick Replies */}
+            {role === 'assistant' && showQuickReplies && onQuickReply && (
+              <QuickReplies onSelect={onQuickReply} personalityColor={personality.color} />
+            )}
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }

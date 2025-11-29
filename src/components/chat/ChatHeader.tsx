@@ -30,16 +30,15 @@ export function ChatHeader({ onNewConversation, onToggleSidebar, onHistoryClick,
                         </button>
                     )}
 
-                    {/* Logo */}
+                    {/* Logo/Avatar */}
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
                             <span className="text-lg font-bold text-white">IA</span>
                         </div>
                         <div className="hidden sm:block">
-                            <h1 className="text-lg font-bold text-gray-900">Chat Financeiro</h1>
-                            {currentTitle && (
-                                <p className="text-xs text-gray-500 truncate max-w-[200px]">{currentTitle}</p>
-                            )}
+                            <h1 className="text-lg font-bold text-gray-900">
+                                {currentTitle || 'Chat Financeiro'}
+                            </h1>
                         </div>
                     </div>
                 </div>

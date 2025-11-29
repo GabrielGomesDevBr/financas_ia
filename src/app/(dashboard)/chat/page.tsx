@@ -6,9 +6,10 @@ import { ChatHero } from '@/components/chat/ChatHero'
 import { ChatHeader } from '@/components/chat/ChatHeader'
 import { ChatInput } from '@/components/chat/ChatInput'
 import { ConversationModal } from '@/components/chat/ConversationModal'
+import { LoadingIndicator } from '@/components/chat/LoadingIndicator'
 import { createClient } from '@/lib/supabase/client'
+import { personalities } from '@/lib/openai/personalities'
 import { toast } from 'react-hot-toast'
-import { Loader2 } from 'lucide-react'
 
 interface Message {
   id: string
@@ -23,11 +24,14 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [currentConversationId, setCurrentConversationId] = useState<string | undefined>()
   const [userAvatar, setUserAvatar] = useState<string | undefined>()
+  const [userPersonality, setUserPersonality] = useState<string>('padrao')
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
-  // Fetch user avatar on mount
+  const currentPersonality = personalities[userPersonality] || personalities.padrao
+
+  // Fetch user data on mount
   useEffect(() => {
     const fetchUserData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -39,6 +43,9 @@ export default function ChatPage() {
           .single()
 
         setUserAvatar(userData?.avatar_url)
+        // TODO: Add personality field to users table
+        // For now, defaulting to 'julius' for testing
+        setUserPersonality('julius')
       }
     }
     fetchUserData()
@@ -184,7 +191,7 @@ export default function ChatPage() {
       <ChatHeader
         onNewConversation={handleNewConversation}
         onHistoryClick={() => setIsHistoryModalOpen(true)}
-        currentTitle={messages.length > 0 ? undefined : undefined}
+        currentTitle={currentPersonality.displayTitle}
       />
 
       {/* Messages Area */}
@@ -199,6 +206,7 @@ export default function ChatPage() {
                 role={message.role}
                 content={message.content}
                 userAvatar={userAvatar}
+                personalityKey={userPersonality}
                 onRegenerate={
                   message.role === 'assistant' &&
                     message.id === messages[messages.length - 1]?.id
@@ -208,15 +216,7 @@ export default function ChatPage() {
               />
             ))}
             {isLoading && (
-              <div className="flex items-start gap-4 py-4">
-                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-600 text-sm font-bold text-white shadow-lg">
-                  IA
-                </div>
-                <div className="flex items-center gap-2 pt-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-                  <span className="text-sm text-gray-500">Pensando...</span>
-                </div>
-              </div>
+              <LoadingIndicator personalityKey={userPersonality} />
             )}
             <div ref={messagesEndRef} />
           </div>

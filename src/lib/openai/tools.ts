@@ -24,11 +24,7 @@ export const tools = [
           },
           category: {
             type: "string",
-            description: "Nome da categoria (ex: Alimentação, Transporte, Salário, etc)"
-          },
-          subcategory: {
-            type: "string",
-            description: "Nome da subcategoria (ex: Uber/App, Mercado, etc)"
+            description: "Nome da categoria (ex: Alimentação, Transporte, Salário, etc). Use APENAS as categorias principais, sem subcategorias."
           },
           date: {
             type: "string",
